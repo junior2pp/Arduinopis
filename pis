@@ -1,0 +1,132 @@
+//Sensor de Aparcamiento por ultrasonidos
+//Sonar + Senal acustica de aviso
+
+//Sonar 
+#include "Ultrasonic.h"     //Libreria del sonar
+Ultrasonic ultrasonic(6,7); //Trigger, Echo
+
+// Senal acustica
+#include "pitches.h"        //Libreria que contiene las notas musicales
+int sonido = NOTE_E5;       //Declaramos la nota musical elegida como el sonido
+
+int sonar;                  //Declaramos la variable sonar
+int estado=0;
+void setup()
+{
+   Serial.begin(9600);    //Inicio de la comunicacion serie a 9600 baudios
+   pinMode(5,OUTPUT);
+   pinMode(13,OUTPUT);
+   pinMode(4,OUTPUT);
+   pinMode(3,OUTPUT);
+   pinMode(9,OUTPUT);
+   pinMode(12,OUTPUT);
+   pinMode(11,OUTPUT);
+   pinMode(10,OUTPUT);
+   pinMode(2,OUTPUT);
+   pinMode(16,OUTPUT);
+   pinMode(17,OUTPUT);
+}
+
+void loop()
+{
+  //CONEXION BLUETOOTH
+if(Serial.available()>0){
+ estado = Serial.read();}
+
+  if(estado=='1'){
+    digitalWrite(13,HIGH);
+    }
+  if(estado=='q'){
+    digitalWrite(13,LOW);
+    } 
+   if(estado=='2'){
+    digitalWrite(12,HIGH);
+    } 
+   if(estado=='w'){
+    digitalWrite(12,LOW);
+    }
+    if(estado=='3'){
+      digitalWrite(11,HIGH);
+      }
+    if(estado=='e'){
+      digitalWrite(11,LOW);
+      }
+    if(estado=='4'){
+      digitalWrite(10,HIGH);
+      }
+    if(estado=='r'){
+      digitalWrite(10,LOW);
+      }
+     if(estado=='5'){
+      digitalWrite(16,HIGH);
+      }
+    if(estado=='t'){
+      digitalWrite(16,LOW);
+      }
+    if(estado=='6'){
+      digitalWrite(17,HIGH);
+      }
+    if(estado=='y'){
+      digitalWrite(17,LOW);
+      }
+
+//EMPIEZA TEMPERATURA
+//Calcula la temperatura usando como referencia 5v
+temperatura = (5.0 * analogRead(0)*100.0)/1023.0;
+Serial.println (temperatura); //escribe la temperatura en el serial
+delay (500); //espera segundos para la siguiente medicion
+
+//esto enciende y apaga el ventilador
+if (temperatura < 225){//Mide la temperatura y enciende el ventilador
+  digitalWrite(3, HIGH);   
+}else
+  digitalWrite(3,LOW);
+
+if(temperatura < 225){//lo mismo
+  digitalWrite(4,HIGH);
+  }  
+else  
+digitalWrite(4,LOW);
+if(temperatura < 225){
+  digitalWrite(2,HIGH);
+  }
+ else
+ digitalWrite(2,LOW);
+//TERMINA TEMPERATURA
+
+   sonar = ultrasonic.Ranging(CM); //Leemos la distancia del sonar  
+                                   
+                                   //La funcion ultrasonic.ranging(cm) viene declarada en la libreria del sonar
+                                   //Calcula la distancia a la que rebota una senal enviada basandose en el 
+                                   //tiempo que tarda en recorrer dicha distancia, devolviendonos la distancia
+                                   //en centimetros, lista para utilizar en casos de medicion por ultrasonidos.
+                                    
+   while (sonar < 35)             //Mientras que la distancia sea menor a 50 cm
+   {   
+       digitalWrite(9,HIGH); delay(200); digitalWrite(9,LOW); delay(200); digitalWrite(9,HIGH);
+       digitalWrite(5,LOW);
+       noTone(8);                  //Mantenemos el sonido apagado
+       
+       delay(sonar*10);            //Delay dependiente del valor del sonar. Si la distancia se reduce
+                                   //el delay es menor y la senal acustica sonara con mayor frecuencia.
+                                   //Si la distancia aumenta, el delay aumenta, disminuyendo la frecuencia
+                                   //con la que suenan los pitidos.
+       
+       tone(8, sonido);            //Senal acustica de aviso 
+       
+       delay(100);                 //Delay para mantener la senal acustica 0,1 segundos minimo
+       
+       noTone(8);                  //Apagamos el sonido
+
+       
+       while (sonar < 10)          //Si la distancia del sonar es menor que 10 cm
+       {
+         digitalWrite(9,LOW);
+         digitalWrite(5,HIGH); delay(70); digitalWrite(5,LOW); delay(70); digitalWrite(5,HIGH);
+         tone(8, sonido);                //Suena sin interrupciones indicando la proximidad del objeto
+         sonar = ultrasonic.Ranging(CM); //Distancia del sonar         
+       }
+       
+       sonar = ultrasonic.Ranging(CM); //Leemos la distancia del sonar para volver a empezar
+   }
+}
